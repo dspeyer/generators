@@ -1,4 +1,1 @@
-generators
-==========
-
-Python style generators for c++11
+This library provides python-style generators for C++11.
