@@ -2,7 +2,7 @@
 #include"generators.h"
 
 struct Range : GeneratorHeart<int> {
-  int run(int start, int end, int interval=1) {
+  void run(int start, int end, int interval=1) {
     for (int i=start; i<end; i+=interval) {
       yield(i);
     }
