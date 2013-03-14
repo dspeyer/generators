@@ -3,6 +3,15 @@ Generators
 
 This library provides python-style generators for C++11.
 
+Examples
+--------
+
+It's probably easier to learn this library from examples than from this documentation.  The recommended order is:
+
+* range_example -- The simplest nontrivial generator.  Shows flexibility of parameters, and varients of usage.
+* file_example -- Shows how to safely clean up heap allocations and process state.
+* recursive_dir_example -- Shows how to use recursion and maintain cleanup safety there.
+
 Defining Generators
 -------------------
 
