@@ -11,14 +11,14 @@ To define a new type of generator, create a struct that inherits GeneratorHeart<
     struct TagonCountTo : GeneratorHeart<int> {
       void run(int target) {
         yield(1);
-	yield(2);
-	yield(target);
+        yield(2);
+        yield(target);
       }
     }
 
 For a simple but not absurd example, see range_example.cc
 
-You can define whatever additional functions or variables you want.  Run can take whatever arguments it likes.  You can even define several run functions with different arguments, or make run take templated parameters.
+You can define whatever additional functions or variables you want.  Run can take whatever arguments it likes.  You can even define several run functions with different arguments, or make run take templated parameters.  However, if run is templated, the template must be deduceable from the parameters.
 
 **Warning: The run function might not be allowed to finish.**
 
@@ -105,3 +105,19 @@ To be precise, here is the api:
 * ++gen goes to the next value
 * static_cast<bool>(gen) gets whether or not the generator still has data in it
 * gen.begin() and gen.end() return wrappers around gen with the semantics that for loops need
+
+Compiling the Code
+------------------
+
+The generators library uses c++11 and pthreads.  If you're using gcc, include
+
+    --std=c++11 -pthread
+
+in your command line.
+
+Wait, pthreads?  What?
+----------------------
+
+Yes, the implementation is pthreads based.  This way, the generators get their own first class stacks, which they can use however they like.
+
+The code is not multithreaded.  The generator thread only runs when the thread that spawned it is blocked, waiting for it to run.
