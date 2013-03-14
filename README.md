@@ -111,7 +111,7 @@ Compiling the Code
 
 The generators library uses c++11 and pthreads.  If you're using gcc, include
 
-    --std=c++11 -pthread
+    -std=c++11 -pthread
 
 in your command line.
 
