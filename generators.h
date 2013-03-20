@@ -1,6 +1,7 @@
 #ifndef _GENERATORS_H_
 #define _GENERATORS_H_
 
+#include<exception>
 #include<functional>
 #include<pthread.h>
 
@@ -47,10 +48,13 @@ private:
   OutputT value;
   bool hasOutputted;
   pthread_mutex_t* mutex;
+  bool abort;
+  class AbortException : public std::exception {};
 public:
   typedef OutputT Output;
   template<typename T>
   friend class Gen;
+ GeneratorHeart() : hasOutputted(false), abort(false) {}
   void yield(OutputT v) {
     value = v;
     hasOutputted = true;
@@ -58,6 +62,9 @@ public:
       pthread_mutex_unlock(mutex);
       pthread_yield();
       pthread_mutex_lock(mutex);
+    }
+    if (abort) {
+      throw AbortException();
     }
   }
 };
@@ -91,14 +98,17 @@ public:
   }
   ~Gen() {
     if (!done) {
-      pthread_cancel(this->thread);
+      heart.abort = true;
+      ++(*this);
     }
     pthread_mutex_destroy(&this->mutex);
   }
   template<typename... ARGS>
   void threadmain(ARGS... args) {
     pthread_mutex_lock(&this->mutex);
-    heart.run(args...);
+    try {
+      heart.run(args...);
+    } catch (typename Heart::AbortException ex) {}
     done = true;
     pthread_mutex_unlock(&this->mutex);
     pthread_exit(NULL);

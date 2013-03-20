@@ -6,11 +6,7 @@ This library provides python-style generators for C++11.
 Examples
 --------
 
-It's probably easier to learn this library from examples than from this documentation.  The recommended order is:
-
-* range_example -- The simplest nontrivial generator.  Shows flexibility of parameters, and varients of usage.
-* file_example -- Shows how to safely clean up heap allocations and process state.
-* recursive_dir_example -- Shows how to use recursion and maintain cleanup safety there.
+It's probably easier to learn this library from examples than from this documentation.  Read range_example first, which is a very simple generator.  Then look at recursive_dir_example for a demonstration of recursion, nesting and destructors.
 
 Defining Generators
 -------------------
@@ -31,50 +27,7 @@ You can define whatever additional functions or variables you want.  Run can tak
 
 **Warning: The run function might not be allowed to finish.**
 
-If the generator is destroyed, the function will be rudely interrupted.  So rudely that destructors for local variables will not run.  Destructors for struct-level variables will run, as will the struct's own destructor.
-
-The following code might leak memory:
-
-    struct foo : GeneratorHeart<int> {
-      void run() {
-        vector<int> scratch(1000);
-
-The safe way to write this is:
-
-    struct foo : GeneratorHeart<int> {
-      vector<int> scratch;
-      void run() {
-        scratch.resize(1000);
-
-Or
-
-    struct foo : GeneratorHeart<int> {
-      vector<int> scratch;
-      foo() : scratch(1000) {}
-      void run() {
-
-Similarly, this also might leak memory:
-
-    struct foo : GeneratorHeart<int> {
-      void run() {
-        char* scratch = new char[1000];
-        // do stuff
-        delete scratch;
-      }
-    }
-
-The safe version is:
-
-    struct foo : GeneratorHeart<int> {
-      char* scratch;
-      void run() {
-        scratch = new char[1000];
-        // do stuff
-      }
-      ~foo() {
-        delete scratch;
-      }
-    }
+If the generator goes out of scope before the run function finishes, an AbortException will be thrown in the generator.  You generally shouldn't catch this exception -- just be aware that yield might throw instead of returning.  Exceptions unwind the stack c++ style, so all destructors will be called.  If you have cleanup that isn't destructors, put it in the generator's destructor (and make relevant variables struct-scope instead of function-scope), but if you can work it as RAII you will probably have an easier time.
 
 Instantiating Generators
 ------------------------

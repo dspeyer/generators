@@ -1,48 +1,52 @@
 #include <sys/types.h>
 #include <dirent.h>
-#include<stdio.h>
-#include<string.h>
-#include<stack>
+#include<string>
+#include<iostream>
 #include"generators.h"
 
-using std::stack;
+using namespace std;
 
 #define MAX_PATH 4096
 
-struct LsDashR : GeneratorHeart<char*> {
-  stack<DIR*> dirs; // This needs to live outside of run so we can close them all if needed
-  void run(const char* dirname) {
-    char fullpath[MAX_PATH]; // on the stack, so safe
-    strcpy(fullpath, dirname);
-    char* fullpathend = fullpath + strlen(fullpath);
-    *fullpathend++ = '/';
-    DIR* dir = opendir(dirname);
-    if (!dir) return;
-    dirs.push(dir);
+struct Ls : GeneratorHeart<dirent*> {
+  DIR* dir;
+  string dirname; // Just so that we can report it in the debugging info
+  void run(string _dirname) {
+    dirname = _dirname;
+    dir = opendir(dirname.c_str());
     while(dirent* file = readdir(dir)) {
+      yield(file);
+    }
+  }
+  // We need a desctructor here because DIRs are a c-style concept
+  ~Ls(){
+    closedir(dir);
+    cout << "closing " << dirname << endl;  // So you can see it works
+  }
+};
+
+struct LsDashR : GeneratorHeart<string> {
+  void run (string dirname) {
+    for (dirent* file : Gen<Ls>(dirname)) {
       if (file->d_name[0] == '.') {
 	continue;
       }
-      strcpy(fullpathend, file->d_name);
+      string fullpath = dirname + "/" + file->d_name;
       if (file->d_type == DT_DIR) {
 	run(fullpath);
       } else {
 	yield(fullpath);
       }
     }
-    closedir(dir);
-    dirs.pop();
   }
-  ~LsDashR() {
-    while (!dirs.empty()) {
-      closedir(dirs.top());
-      dirs.pop();
-    }
-  }
+  // We don't need a destructor because everything is RAII
 };
 
 main() {
-  for (char* fn : Gen<LsDashR>("/etc/X11")) {
-    printf("%s\n", fn);
+  for (string fn : Gen<LsDashR>("/etc/X11")) {
+    cout << fn << endl;
+    if (fn == "/etc/X11/xinit/xinput.d/all_ALL") {
+      break;
+    }
   }
 }
